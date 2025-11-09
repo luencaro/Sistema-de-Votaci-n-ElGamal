@@ -2,6 +2,9 @@
 
 Sistema de votación electrónica con **cifrado homomórfico ElGamal multiplicativo** y **pruebas NIZK** (Non-Interactive Zero-Knowledge).
 
+
+## *Desarrollado por Luis Cabarcas Romero (<lcabarcase@uninorte.edu.co>) y Ashley Mercado Defort (<agmercado@uninorte.edu.co>)*
+
 ## ¿Qué hace?
 
 Permite votar de forma **privada** y **verificable**:
@@ -16,9 +19,6 @@ Permite votar de forma **privada** y **verificable**:
 ```bash
 # Fedora/RHEL
 sudo dnf install gmp-devel mpfr-devel libmpc-devel
-
-# Ubuntu/Debian
-sudo apt-get install libgmp-dev libmpfr-dev libmpc-dev
 ```
 
 ### Paquetes Python
@@ -26,6 +26,7 @@ sudo apt-get install libgmp-dev libmpfr-dev libmpc-dev
 python3 -m venv venv
 source venv/bin/activate
 pip install gmpy2
+o usar requirements.txt
 ```
 
 ## Uso
