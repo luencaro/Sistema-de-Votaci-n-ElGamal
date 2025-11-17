@@ -89,7 +89,7 @@ def simulate_election():
     print()
     
     # Crear centro de votación
-    voting_center = VotingCenter(authority.token_system, public_key)
+    voting_center = VotingCenter(authority.token_system, public_key, authority.auditoria)
     
     # Simular votos de cada participante
     # Cada votante elige SÍ (True) o NO (False)
@@ -162,17 +162,31 @@ def simulate_election():
     print("▓"*70)
     
     # Crear centro de recuento
-    tallying_center = TallyingCenter(authority.elgamal)
+    tallying_center = TallyingCenter(authority.elgamal, authority.auditoria, public_key)
     
     # Obtener votos válidos
     valid_votes = voting_center.get_valid_votes()
     
-    # Realizar recuento homomórfico
+    # Realizar recuento homomórfico (con mixnet)
     yes_count, no_count = tallying_center.tally_votes(valid_votes)
     
     # Publicar resultados
     stats = voting_center.get_statistics()
     tallying_center.publish_results(yes_count, no_count, stats)
+    
+    # =========================================================================
+    # FASE 6: AUDITORÍA
+    # =========================================================================
+    
+    print("\n" + "▓"*70)
+    print("▓ FASE 6: VERIFICACIÓN DE AUDITORÍA")
+    print("▓"*70)
+    
+    # Verificar integridad de la cadena de auditoría
+    authority.auditoria.verificar_integridad()
+    
+    # Mostrar resumen
+    authority.auditoria.imprimir_resumen()
 
 
 def main():

@@ -7,41 +7,99 @@ Sistema de votación electrónica con **cifrado homomórfico ElGamal multiplicat
 
 ## ¿Qué hace?
 
-Permite votar de forma **privada** y **verificable**:
+Permite votar de forma **privada**, **anónima** y **verificable**:
 - Los votos están **cifrados** (nadie puede ver votos individuales)
-- Cada voto incluye una **prueba criptográfica** de validez
+- Cada voto incluye una **prueba criptográfica** de validez (NIZK)
 - Los votos se **acumulan sin descifrar** (homomorfismo)
+- **Mixnet** rompe la trazabilidad votante-voto (re-cifrado y mezcla)
 - Sistema de **tokens** previene votación doble
+- **Auditoría inmutable** registra todos los eventos (blockchain-like)
 
 ## Instalación
 
 ### Dependencias del Sistema
+
+#### Linux (Fedora/RHEL)
 ```bash
-# Fedora/RHEL
 sudo dnf install gmp-devel mpfr-devel libmpc-devel
 ```
 
+#### Windows
+1. Descargar e instalar **Visual Studio Build Tools** o **MinGW-w64**
+2. Opción más fácil: usar **wheels precompilados**:
+   ```bash
+   pip install gmpy2
+   ```
+3. Si falla, descargar wheel desde [Christoph Gohlke's packages](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gmpy)
+
+#### macOS
+```bash
+brew install gmp mpfr libmpc
+```
+
 ### Paquetes Python
+
+#### Linux/macOS
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install gmpy2
-o usar requirements.txt
+# o usar: pip install -r requirements.txt
+```
+
+#### Windows (PowerShell)
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install gmpy2
+# o usar: pip install -r requirements.txt
+```
+
+#### Windows (CMD)
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+pip install gmpy2
 ```
 
 ## Uso
 
-**Importante**: Activar el entorno virtual primero:
+### Activar el Entorno Virtual
+
+#### Linux/macOS
 ```bash
 source venv/bin/activate
 ```
 
-Luego ejecutar:
-```bash
-python test/verify.py         # Verificación del sistema (6 tests)
-python src/main.py            # Demostración completa (8 votantes)
-python test/examples.py       # Ejemplos interactivos por componente
+#### Windows (PowerShell)
+```powershell
+.\venv\Scripts\Activate.ps1
 ```
+
+#### Windows (CMD)
+```cmd
+venv\Scripts\activate.bat
+```
+
+### Ejecutar el Sistema
+
+Una vez activado el entorno virtual:
+
+```bash
+# Verificación rápida del sistema (6 tests de integración)
+python test/verify.py
+
+# Demostración completa con 8 votantes
+python src/main.py
+
+# Ejemplos interactivos por componente
+python test/examples.py
+
+# Suite completa de pruebas unitarias (27 tests)
+python test/test_voting_system.py
+```
+
+**Nota para Windows**: Si `python` no funciona, intenta con `py` o `python3`
 
 ## Cómo Funciona
 
@@ -68,7 +126,21 @@ Los votos se suman **sin descifrar**:
 ```
 Descifrar `(v*, e*)` → `g^suma` → recuperar `suma` por log discreto
 
-### 4. Tokens de Un Solo Uso
+### 4. Mixnet (Mezcla de Votos)
+Rompe el vínculo votante-voto:
+- **Permutación aleatoria** de los votos cifrados
+- **Re-cifrado**: `(v', e') = (v·g^r, e·u^r) mod p`
+- Genera prueba ZKP de mezcla correcta
+- Imposible rastrear qué votante emitió qué voto
+
+### 5. Sistema de Auditoría
+Registro inmutable de eventos electorales:
+- **Cadena de hashes** tipo blockchain
+- Cada evento enlaza al anterior: `hash(evento_i) = f(hash(evento_i-1), datos_i)`
+- Tipos: SETUP, REGISTRO, VOTO, MEZCLA, CONTEO
+- **Verificación de integridad**: detecta cualquier alteración
+
+### 6. Tokens de Un Solo Uso
 - Token = `HMAC(secret, voter_id || timestamp || nonce)`
 - Se marca como usado después de votar
 - Detecta intentos de voto doble
@@ -79,18 +151,21 @@ Descifrar `(v*, e*)` → `g^suma` → recuperar `suma` por log discreto
 src/
 ├── crypto_utils.py      → Primitivas (primos seguros, generadores, gmpy2)
 ├── elgamal.py          → Sistema de cifrado + homomorfismo
-├── nizk.py             → Generación y verificación de pruebas
+├── nizk.py             → Generación y verificación de pruebas NIZK
 ├── token_system.py     → Gestión de tokens HMAC
+├── mixnet.py           → Mezcla y re-cifrado de votos (anonimato)
+├── auditoria.py        → Sistema de auditoría con cadena de hashes
 ├── voting_system.py    → Orquestación completa
 │   ├─ VotingAuthority   (genera claves, registra votantes)
 │   ├─ Voter             (cifra voto + genera prueba)
 │   ├─ VotingCenter      (recibe y valida votos)
-│   └─ TallyingCenter    (acumula y descifra)
-└── main.py             → Demostración completa
+│   └─ TallyingCenter    (mezcla, acumula y descifra)
+└── main.py             → Demostración completa con 8 votantes
 
 test/
-├── verify.py           → Suite de verificación (6 tests)
-└── examples.py         → Ejemplos interactivos
+├── verify.py           → Suite de verificación (6 tests de integración)
+├── examples.py         → Ejemplos interactivos por componente
+└── test_voting_system.py → 27 pruebas unitarias completas
 ```
 
 ## Optimizaciones

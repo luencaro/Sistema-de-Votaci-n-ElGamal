@@ -4,6 +4,8 @@ from collections import namedtuple
 from elgamal import ElGamalSystem, PublicKey, Ciphertext
 from nizk import NIZKSystem, NIZKProof
 from token_system import TokenSystem, VoterToken
+from mixnet import Mixnet
+from auditoria import SistemaAuditoria
 
 EncryptedVote = namedtuple('EncryptedVote', ['voter_id', 'token', 'ciphertext', 'proof'])
 
@@ -22,6 +24,7 @@ class VotingAuthority:
         """
         self.elgamal = ElGamalSystem(bits)
         self.token_system = TokenSystem()
+        self.auditoria = SistemaAuditoria()
         self.public_key= None
         self.registered_voters= []
     
@@ -39,6 +42,13 @@ class VotingAuthority:
         
         # Generar claves ElGamal
         self.public_key, _ = self.elgamal.generate_keys()
+        
+        # Registrar en auditoría
+        self.auditoria.registrar_evento('SETUP', {
+            'p': str(self.public_key.p)[:20] + '...',
+            'g': str(self.public_key.g)[:20] + '...',
+            'bits': self.elgamal.bits
+        })
         
         return self.public_key
     
@@ -64,6 +74,12 @@ class VotingAuthority:
             self.registered_voters.append(voter_id)
             print(f"  ✓ Votante registrado: {voter_id}")
             print(f"    Token: {token.token[:50]}...")
+            
+            # Registrar en auditoría
+            self.auditoria.registrar_evento('REGISTRO', {
+                'voter_id': voter_id,
+                'token_emitido': True
+            })
         
         print(f"\nTotal de votantes registrados: {len(voter_ids)}")
         print("="*70)
@@ -117,16 +133,18 @@ class VotingCenter:
     Centro de Votación - Valida y registra votos
     """
     
-    def __init__(self, token_system, public_key):
+    def __init__(self, token_system, public_key, auditoria):
         """
         Inicializa el centro de votación
         
         Args:
             token_system: Sistema de tokens para validación
             public_key: Clave pública del sistema
+            auditoria: Sistema de auditoría
         """
         self.token_system = token_system
         self.public_key = public_key
+        self.auditoria = auditoria
         self.valid_votes= []
         self.rejected_votes= []  # (voter_id, razón)
     
@@ -171,6 +189,13 @@ class VotingCenter:
         self.valid_votes.append(encrypted_vote)
         self.token_system.mark_token_used(encrypted_vote.token)
         
+        # 4. Registrar en auditoría
+        self.auditoria.registrar_evento('VOTO', {
+            'voter_id': voter_id,
+            'voto_valido': True,
+            'nizk_verificado': True
+        })
+        
         print(f"    ✓ Voto registrado exitosamente")
         
         return True
@@ -200,14 +225,18 @@ class TallyingCenter:
     Centro de Recuento - Acumula votos y publica resultados
     """
     
-    def __init__(self, elgamal):
+    def __init__(self, elgamal, auditoria, public_key):
         """
         Inicializa el centro de recuento
         
         Args:
             elgamal: Sistema ElGamal con acceso a la clave privada
+            auditoria: Sistema de auditoría
+            public_key: Clave pública para mixnet
         """
         self.elgamal = elgamal
+        self.auditoria = auditoria
+        self.mixnet = Mixnet(public_key)
     
     def tally_votes(self, encrypted_votes):
         """
@@ -234,9 +263,30 @@ class TallyingCenter:
         for i, ct in enumerate(encrypted_votes[:3], 1):
             print(f"  Voto {i}: (v={ct.v % 10000}..., e={ct.e % 10000}...)")
         
-        # Acumular todos los votos homomórficamente
+        # PASO 1: Mezclar votos con Mixnet
+        print("\n" + "="*70)
+        print("FASE DE MEZCLA (MIXNET) - Romper trazabilidad")
+        print("="*70)
+        
+        mixed_votes, mix_proof = self.mixnet.shuffle_and_recrypt(encrypted_votes)
+        
+        # Verificar mezcla
+        if not self.mixnet.verify_mix(encrypted_votes, mixed_votes, mix_proof):
+            print("  ✗ Error: Mezcla inválida")
+            return 0, 0
+        
+        # Registrar mezcla en auditoría
+        self.auditoria.registrar_evento('MEZCLA', {
+            'votos_originales': len(encrypted_votes),
+            'votos_mezclados': len(mixed_votes),
+            'mezcla_verificada': True
+        })
+        
+        print("="*70)
+        
+        # PASO 2: Acumular votos mezclados homomórficamente
         print("\n→ Multiplicando todos los cifrados homomórficamente...")
-        aggregated = self.elgamal.homomorphic_add(encrypted_votes)
+        aggregated = self.elgamal.homomorphic_add(mixed_votes)
         
         print(f"  Cifrado agregado calculado:")
         print(f"  v* = {aggregated.v % 10000}...")
@@ -244,9 +294,16 @@ class TallyingCenter:
         
         # Descifrar el agregado
         print("\n→ Descifrando el voto agregado...")
-        total_yes = self.elgamal.decrypt_sum(aggregated, len(encrypted_votes))
+        total_yes = self.elgamal.decrypt_sum(aggregated, len(mixed_votes))
         
-        total_no = len(encrypted_votes) - total_yes
+        total_no = len(mixed_votes) - total_yes
+        
+        # Registrar conteo en auditoría
+        self.auditoria.registrar_evento('CONTEO', {
+            'total_votos': len(mixed_votes),
+            'votos_favor': total_yes,
+            'votos_contra': total_no
+        })
         
         print(f"\n✓ Suma de votos desencriptada: {total_yes}")
         print("="*70)
