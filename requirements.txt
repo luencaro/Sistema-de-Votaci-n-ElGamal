@@ -1,10 +1,6 @@
 # Requisitos del Sistema de Votación ElGamal
 
-# Python version
-python>=3.8
-
-# Bibliotecas requeridas
-gmpy2>=2.1.0  # Aritmética de precisión arbitraria y operaciones criptográficas
+gmpy2>=2.1.0 
 
 # Bibliotecas estándar de Python utilizadas:
 # - secrets: Generación de números aleatorios criptográficamente seguros

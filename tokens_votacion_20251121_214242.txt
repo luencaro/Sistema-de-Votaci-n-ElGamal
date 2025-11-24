@@ -1,0 +1,40 @@
+======================================================================
+           TOKENS DE VOTACIÓN - CONFIDENCIAL
+======================================================================
+
+Elección: Compraría comida rápida en la universidad?
+Fecha: 2025-11-21 21:42:42
+Total votantes: 10
+
+======================================================================
+
+Votante: Ashley
+Token: Ashley:1612b4f87c433e526b10f3d077e16545375058c1fbc5bbd86adb60bab8e87300
+
+Votante: Hillary
+Token: Hillary:e3dcc592b583c7a6a47d302bd21c22bed264db7d2665aa85850414acab6b3fb9
+
+Votante: Matias
+Token: Matias:89c9b16ea61e7aca8efd68554fd417313dc0cb07ad1c88f99dcf215a35d06a10
+
+Votante: Jorge
+Token: Jorge:db210f583b9c3f8d94dcd1681e5101e778405352fbcb4e11fc429db89eda37ae
+
+Votante: Gabriel
+Token: Gabriel:575893912ba2a9faadae9c8e2aef25fe93d5e345cda6cd791b1b7fc7c38b234e
+
+Votante: Johanna
+Token: Johanna:255d7becd5892cacdca4a665e6be67fff0c4ac5e2754db433a852fb4734873e0
+
+Votante: Valery
+Token: Valery:4949180072bbdd35036fea81e20dd69a45723e45150323829971ce6512991498
+
+Votante: Angie
+Token: Angie:8ed5ba83905c04bb2195dcfc3862868d91720898927a3555fd403b529f79d12f
+
+Votante: Maria Camila
+Token: Maria Camila:b4ba0a3ebe5e1d2d0cfcdd0a5f86ce70059b3c9cb105cbecdf314faf6be8828f
+
+Votante: Eliana
+Token: Eliana:6f5de16c4edeeb2e93a4284daba241f7aa20eea7c067ee31cb1cbc81bddb9398
+
